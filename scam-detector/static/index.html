@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scam Shield</title>
+<style>
+:root{--bg:#f6f7f9;--fg:#1c2330;--card:#fff;--line:#dde1e8}
+@media (prefers-color-scheme:dark){:root{--bg:#12151b;--fg:#e8ebf0;--card:#1b2029;--line:#2c3340}}
+*{box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--fg);margin:0;padding:24px 16px}
+main{max-width:600px;margin:auto}
+h1{margin:0 0 4px}.sub{opacity:.7;margin:0 0 20px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+textarea{width:100%;height:120px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit}
+button{padding:10px 18px;margin-top:10px;border:0;border-radius:8px;background:#2358d6;color:#fff;font:inherit;cursor:pointer}
+label.chk{display:block;margin-top:10px;font-size:.95rem}
+#card{display:none;color:#fff;border-radius:12px;padding:18px}
+.Dangerous{background:#c62828}.Suspicious{background:#d97a00}.Likely{background:#2e7d32}.Unreadable{background:#555}
+#bar{height:10px;background:#fff4;border-radius:5px;margin:10px 0}#fill{height:100%;background:#fff;border-radius:5px;width:0;transition:width .4s}
+#card h2{margin:0}#card ul{padding-left:20px;margin:8px 0 0}
+.small{font-size:.8rem;opacity:.7}
+</style></head><body><main>
+<h1>Scam Shield</h1><p class="sub">Check an SMS, link or UPI QR code before you trust it.</p>
+<div class="box">
+<textarea id="msg" placeholder="Paste the SMS, message or link here"></textarea>
+<button onclick="scanText()">Check message</button>
+<h3>Or upload a QR code</h3>
+<input type="file" id="qr" accept="image/*"> <button onclick="scanQR()">Check QR</button>
+<label class="chk"><input type="checkbox" id="recv"> I am expecting to <b>receive</b> money</label>
+</div>
+<div id="card"><h2 id="label"></h2><div id="bar"><div id="fill"></div></div>
+<div id="score"></div><ul id="reasons"></ul><p class="small" id="dec"></p></div>
+<p class="small">Prototype: a helper, not a guarantee. Never share your UPI PIN or OTP with anyone.</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+function show(r){
+  $("card").style.display="block";$("card").className=r.label.split(" ")[0];
+  $("label").textContent=r.label;$("score").textContent="Risk score: "+r.score+"/100";
+  $("fill").style.width=r.score+"%";$("dec").textContent=r.decoded?"QR content: "+r.decoded:"";
+  const ul=$("reasons");ul.innerHTML="";
+  r.reasons.forEach(t=>{const li=document.createElement("li");li.textContent=t;ul.appendChild(li)});
+}
+async function scanText(){
+  if(!$("msg").value.trim())return alert("Paste a message first");
+  const res=await fetch("/scan",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({text:$("msg").value,expecting_to_receive:$("recv").checked})});
+  show(await res.json());
+}
+async function scanQR(){
+  const f=$("qr").files[0];if(!f)return alert("Choose an image first");
+  const fd=new FormData();fd.append("file",f);
+  const res=await fetch("/scan-qr?expecting_to_receive="+$("recv").checked,{method:"POST",body:fd});
+  show(await res.json());
+}
+</script></body></html>

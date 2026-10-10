@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+scikit-learn
+pandas
+joblib
+tldextract
+opencv-python-headless
+python-multipart
+qrcode[pil]
